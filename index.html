@@ -1789,14 +1789,45 @@ function submitWhatsApp() {
   window.open(`https://wa.me/919176021801?text=${encoded}`, '_blank');
 }
 
-function submitEmail() {
+async function submitEmail() {
   const d = getFormData();
   if (!d) return;
-  const subject = encodeURIComponent(`Product Enquiry — ${d.product}`);
-  const body = encodeURIComponent(
-    `Name: ${d.name}\nCompany: ${d.company || '—'}\nEmail: ${d.email || '—'}\nPhone: ${d.phone || '—'}\nProduct: ${d.product}\n\nRequirements:\n${d.message || '—'}`
-  );
-  window.open(`mailto:venturionindia@gmail.com?subject=${subject}&body=${body}`, '_blank');
+
+  const btn = document.querySelector('.btn-primary[onclick="submitEmail()"]');
+  const original = btn.innerHTML;
+  btn.innerHTML = 'Sending...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('https://formspree.io/f/xnjklqoq', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        name:        d.name,
+        company:     d.company || '—',
+        email:       d.email   || '—',
+        phone:       d.phone   || '—',
+        product:     d.product,
+        message:     d.message || '—',
+        _subject:    `New Enquiry — ${d.product} | Venturion`
+      })
+    });
+
+    if (res.ok) {
+      btn.innerHTML = '✓ Sent!';
+      btn.style.background = '#22c55e';
+      // clear form
+      ['f-name','f-company','f-email','f-phone','f-message'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('f-product').selectedIndex = 0;
+      setTimeout(() => { btn.innerHTML = original; btn.style.background = ''; btn.disabled = false; }, 4000);
+    } else {
+      throw new Error('Failed');
+    }
+  } catch(e) {
+    btn.innerHTML = '✗ Failed — try WhatsApp';
+    btn.style.background = '#ef4444';
+    setTimeout(() => { btn.innerHTML = original; btn.style.background = ''; btn.disabled = false; }, 3000);
+  }
 }
 </script>
 </body>
